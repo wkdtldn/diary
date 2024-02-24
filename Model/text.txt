@@ -1,0 +1,55 @@
+## NeuralNetwork 클래스의 function 해설
+# ---------------------------------------------
+
+# 모델에 입력을 전달 => 2차원 텐서를 변환
+# 2차원 텐서의 dim = 0 은 각 분류(class) 에 대한 원시(raw) 예측값 10개가 , dim = 1에는 각 츅력의 개별 값들이 해당
+# 원치 예측값을 nn.Softmax 모듈의 인스턴스에 통과 => 예측 확률
+X = torch.rand(1, 28, 28,device=device)
+logits = model(X)
+pred_probab = nn.Softmax(dim = 1)(logits)
+y_pred = pred_probab.argmax(1)
+print(f"Predicted class : {y_pred}")
+
+# 28 * 28 크기의 이미지 3개로 구성된 미니 배치를 가져와 신경망을 통과할때 발생하는 일 확인
+input_image = torch.rand(3,28,28)
+print(input_image.size())
+
+# nn.Flatten 계층 초기화 => input_image를 784 픽셀 값을 갖는 연속된 배열로 변환
+flatten = nn.Flatten()
+flat_image = flatten(input_image)
+print(flat_image.size())
+
+# 선형 계층 : 저장된 가중치, 편향을 사용 => 입력에 선형 변환을 적용하는 모듈
+layer1 = nn.Linear(in_features=28*28, out_features=20)
+hidden1 = layer1(flat_image)
+print(hidden1.size())
+
+# 비선형 활성화 : 모델의 입출력 사이에 복잡한 관계를 만듬
+# => 선형 변환 후에 적용되어 비선형선을 도입, 신경망이 다양한 현상을 학습할 수 있도록 도움
+print(f"Before ReLU: {hidden1}\n\n")
+hidden1 = nn.ReLU()(hidden1)
+print(f"After ReLU: {hidden1}")
+
+# nn.Sequential : 순서를 갖는 모듈의 컨테이너 => seq_moduls 와 같은 신경망을 빠르게 만들 수 있음
+seq_modules = nn.Sequential(
+    flatten,
+    layer1,
+    nn.ReLU(),
+    nn.Linear(20,10)
+)
+input_image = torch.rand(3,28,28)
+logits = seq_modules(input_image)
+
+# nn.Softmax : 신경망의 마지막 선형 계층은 이 모듈에 전달될 ([-infty,infty] 범위의 원시값(raw value)인) logits를 변환
+# logits는 예측 확률을 나타내도록 [0,1] 범위로 비례하여 조정(scale)
+# dim 매개변수는 값의 합이 1이 되는 차원을 나타냄
+softmax = nn.Softmax(dim=1)
+pred_probab = softmax(logits)
+
+# 신경망 내부 계층들 => 매개변수화 ==> 학습중 최적화되는 가중치와 편향과 연관
+print(f"Model structure : {model}\n\n")
+
+for name, param in model.named_parameters():
+    print(f"Layer : {name} | Size : {param.size()} | Values : {param[:2]}\n")
+
+-----------------------------------------------------------------------------------------
